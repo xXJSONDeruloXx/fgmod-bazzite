@@ -1,39 +1,66 @@
 #!/usr/bin/env bash
 
+set -x  # Enable debugging
+exec > >(tee -i /tmp/prepare.log) 2>&1  # Log output and errors
+
+# Function to test if curl works with a given LD_LIBRARY_PATH
+test_curl() {
+    local lib_path=$1
+    export LD_LIBRARY_PATH=$lib_path:$LD_LIBRARY_PATH
+    echo "Testing curl with LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+    curl --version >/dev/null 2>&1
+    return $?
+}
+
+# Try library paths and choose the one that works
+if test_curl "/usr/lib"; then
+    echo "Using OpenSSL library path: /usr/lib"
+    export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
+elif test_curl "/usr/lib64"; then
+    echo "Using OpenSSL library path: /usr/lib64"
+    export LD_LIBRARY_PATH="/usr/lib64:$LD_LIBRARY_PATH"
+elif test_curl "/lib"; then
+    echo "Using OpenSSL library path: /lib"
+    export LD_LIBRARY_PATH="/usr/lib:$LD_LIBRARY_PATH"
+elif test_curl "/lib64"; then
+    echo "Using OpenSSL library path: /lib64"
+    export LD_LIBRARY_PATH="/usr/lib64:$LD_LIBRARY_PATH"
+elif test_curl "/usr/local/lib"; then
+    echo "Using OpenSSL library path: /usr/local/lib"
+    export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+elif test_curl "/usr/local/ssl/lib"; then
+    echo "Using OpenSSL library path: /usr/local/ssl/lib"
+    export LD_LIBRARY_PATH="/usr/local/ssl/lib:$LD_LIBRARY_PATH"
+else
+    echo "Failed to configure OpenSSL for curl. Exiting."
+    exit 1
+fi
+
 mod_path="$HOME/fgmod"
 nvidiaver=555.52.04
 enablerver=3.02.000.0
 fakenvapiver=v1.2.0
-# standalone makes use of fgmod.sh and fgmod-uninstaller.sh from the working directory
-# To make it fully standalone with files being installed to pwd, set standalone=1 and mod_path=.
-standalone=0
+standalone=1
 
 if [[ -d "$mod_path" ]] && [[ ! $mod_path == . ]]; then
-    read -p "$mod_path already exists, override the old version? [y/N] " -n 1 -r </dev/tty
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        rm -r "$mod_path"
-    else
-        echo Aborting...
-        exit 1
-    fi
+    rm -r "$mod_path"
 fi
 
 # In case script gets ran from a different directory
-cd $(dirname "$0")
+cd "$(dirname "$0")"
 
-mkdir "$mod_path"
+mkdir -p "$mod_path"
 if [[ ! $standalone -eq 0 ]]; then
     [[ -f fgmod.sh ]] && cp fgmod.sh "$mod_path/fgmod" || exit 1
     [[ -f fgmod-uninstaller.sh ]] && cp fgmod-uninstaller.sh "$mod_path" || exit 1
 fi
 cd "$mod_path" || exit 1
 
-curl -OLf https://github.com/artur-graniszewski/DLSS-Enabler/releases/download/$enablerver/dlss-enabler-setup-$enablerver.exe
-curl -OLf https://download.nvidia.com/XFree86/Linux-x86_64/$nvidiaver/NVIDIA-Linux-x86_64-$nvidiaver.run
-curl -OLf https://raw.githubusercontent.com/mozilla/fxc2/master/dll/d3dcompiler_47.dll
-curl -OLf https://github.com/FakeMichau/innoextract/releases/download/6.3.0/innoextract
-curl -OLf https://github.com/FakeMichau/fakenvapi/releases/download/$fakenvapiver/fakenvapi.7z
+curl -OLf https://github.com/artur-graniszewski/DLSS-Enabler/releases/download/$enablerver/dlss-enabler-setup-$enablerver.exe || exit 1
+curl -OLf https://download.nvidia.com/XFree86/Linux-x86_64/$nvidiaver/NVIDIA-Linux-x86_64-$nvidiaver.run || exit 1
+curl -OLf https://raw.githubusercontent.com/mozilla/fxc2/master/dll/d3dcompiler_47.dll || exit 1
+curl -OLf https://github.com/FakeMichau/innoextract/releases/download/6.3.0/innoextract || exit 1
+curl -OLf https://github.com/FakeMichau/fakenvapi/releases/download/$fakenvapiver/fakenvapi.7z || exit 1
 [[ $standalone -eq 0 ]] && curl -o fgmod -Lf https://raw.githubusercontent.com/FakeMichau/fgmod/main/fgmod.sh
 [[ $standalone -eq 0 ]] && curl -OL https://raw.githubusercontent.com/FakeMichau/fgmod/main/fgmod-uninstaller.sh
 
@@ -78,6 +105,6 @@ if flatpak list | grep "com.valvesoftware.Steam" 1>/dev/null; then
     flatpak override --user --filesystem="$mod_path" com.valvesoftware.Steam
 fi
 
-echo All done!
 echo For Steam, add this to the launch options: "$mod_path/fgmod" %COMMAND%
 echo For Heroic, add this as a new wrapper: "$mod_path/fgmod"
+echo All done!
