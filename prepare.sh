@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-set -x  # Enable debugging
-exec > >(tee -i /tmp/prepare.log) 2>&1  # Log output and errors
+# set -x  # Enable debugging
+# exec > >(tee -i /tmp/prepare.log) 2>&1  # Log output and errors
 
 # Function to test if curl works with a given LD_LIBRARY_PATH
 test_curl() {
