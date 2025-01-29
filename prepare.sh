@@ -56,7 +56,7 @@ if [[ ! $standalone -eq 0 ]]; then
 fi
 cd "$mod_path" || exit 1
 
-curl -OLf https://github.com/artur-graniszewski/DLSS-Enabler/archive/refs/tags/$enablerver.tar.gz || exit 1
+curl -OLf https://github.com/artur-graniszewski/DLSS-Enabler/releases/download/$enablerver/dlss-enabler-setup-$enablerver.exe || exit 1
 curl -OLf https://download.nvidia.com/XFree86/Linux-x86_64/$nvidiaver/NVIDIA-Linux-x86_64-$nvidiaver.run || exit 1
 curl -OLf https://raw.githubusercontent.com/mozilla/fxc2/master/dll/d3dcompiler_47.dll || exit 1
 curl -OLf https://github.com/FakeMichau/innoextract/releases/download/6.3.0/innoextract || exit 1
