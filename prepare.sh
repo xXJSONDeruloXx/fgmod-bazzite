@@ -107,5 +107,5 @@ fi
 
 echo For Steam, add this to the launch options: "$mod_path/fgmod" %COMMAND%
 echo For Heroic, add this as a new wrapper: "$mod_path/fgmod"
-echo To uninstall the mod from a game, set launch option as "$mod_path/fgmod-uninstaller.sh"
+echo To uninstall the mod from a game, set launch option as "$mod_path/fgmod-uninstaller.sh %COMMAND%"
 echo All done!
